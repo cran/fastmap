@@ -16,7 +16,7 @@ The usual way of doing this in R is to use environments. However, this method is
 ## Installation
 
 ```R
-devtools::install_github("r-lib/fastmap")
+install.packages("fastmap")
 ```
 
 
@@ -221,7 +221,7 @@ Note that the environment operations are themselves slightly faster than the fas
 
 ## Testing your code for symbol leakage
 
-If you want to test your code directly for symbol leakage, you can use the code below.
+If you want to test your code directly for symbol leakage, you can use the code below. (Note: This only works on Mac.)
 
 The `get_symbols()` function returns all symbols that are registered in R's symbol table.
 
@@ -229,6 +229,9 @@ The `get_symbols()` function returns all symbols that are registered in R's symb
 
 
 ```R
+# Note: this will only compile on a Mac. `R_SymbolTable` is not an exported
+# symbol from Defn.h, but the a Mac, the linker exports all C symbols.
+
 get_symbols <- inline::cfunction(
   includes = "
     #define HSIZE   49157 /* The size of the hash table for symbols, from Defn.h */
@@ -291,8 +294,7 @@ new_symbols()
 # After R stops loading things, run our code and see which new symbols have
 # been added.
 abcdefg <- 1
-e <- new.env()
-e$xyz <- 2
+exists("xyz")
 new_symbols()
 #> [1] "abcdefg" "xyz"
 ```
