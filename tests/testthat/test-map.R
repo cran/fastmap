@@ -223,7 +223,7 @@ test_that("Vectorized operations are all-or-nothing", {
   expect_identical(m$get("a"), key_missing())
 
 
-  # get(): one bad key stops all from being removed.
+  # mget(): bad key results in error.
   m$mset(a=1, b=2, c=3)
   expect_error(m$mget(c("a", NA, "c")))
 
@@ -233,7 +233,7 @@ test_that("Vectorized operations are all-or-nothing", {
   expect_mapequal(m$as_list(), list(a=1, b=2, c=3))
   expect_identical(m$get("a"), 1)
 
-  # has(): one bad key stops all from being removed.
+  # has(): bad key results in error.
   expect_error(m$has(c("a", "", "c")))
   expect_identical(m$size(), 3L)
   expect_mapequal(m$as_list(), list(a=1, b=2, c=3))
@@ -290,4 +290,42 @@ test_that("Stress test, compared to environment", {
     }
     expect_mapequal(as.list(e), m$as_list())
   }
+})
+
+
+test_that("Cloning", {
+  m <- fastmap()
+  m$mset(a=1, b=2, c=3)
+
+  m1 <- m$clone()
+  expect_setequal(c("a", "b", "c"), m1$keys())
+  expect_mapequal(list(a=1, b=2, c=3), m1$as_list())
+
+  # Make sure the original and copy are independent.
+  m1$set("a", 10)
+  m1$remove("c")
+  m$set("a", 1000)
+  m$remove("b")
+  expect_mapequal(list(a=10, b=2), m1$as_list())
+  expect_mapequal(list(a=1000, c=3), m$as_list())
+})
+
+
+test_that("keys() implementation", {
+  # These tests compare the C_map_keys function (implemented in C++) to the
+  # faster keys() method (implemented in R).
+
+  # Call the C_map_keys function
+  c_keys <- function (m, sort = FALSE) {
+    .Call(fastmap:::C_map_keys, env(m)$key_idx_map, sort)
+  }
+
+  m <- fastmap()
+
+  expect_setequal(m$keys(), c_keys(m))
+  expect_identical(m$keys(TRUE), c_keys(m, TRUE))
+
+  m$mset(a=1, b=2, c=3)
+  expect_setequal(m$keys(), c_keys(m))
+  expect_identical(m$keys(TRUE), c_keys(m, TRUE))
 })

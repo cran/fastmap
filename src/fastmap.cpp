@@ -107,6 +107,16 @@ extern "C" {
   }
 
 
+  SEXP C_map_has(SEXP map_xptr, SEXP key_r) {
+    std::string key = key_from_sexp(key_r);
+
+    si_map* map = map_from_xptr(map_xptr);
+
+    bool found = map->contains(key);
+    return Rf_ScalarLogical(found);
+  }
+
+
   SEXP C_map_remove(SEXP map_xptr, SEXP key_r) {
     std::string key = key_from_sexp(key_r);
 
@@ -201,6 +211,17 @@ extern "C" {
     Rf_setAttrib(idxs, R_NamesSymbol, keys);
     UNPROTECT(2);
     return idxs;
+  }
+
+  SEXP C_map_copy(SEXP map_xptr) {
+    SEXP new_map_xptr = C_map_create();
+    si_map* new_map = map_from_xptr(new_map_xptr);
+
+    si_map* map = map_from_xptr(map_xptr);
+
+    *new_map = *map;
+
+    return new_map_xptr;
   }
 
   // Convert an R character vector to UTF-8. This is necessary because iconv
