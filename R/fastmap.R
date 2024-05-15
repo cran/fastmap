@@ -238,6 +238,9 @@ fastmap <- function(missing_default = NULL) {
 
   mset <- function(..., .list = NULL) {
     objs <- c(list(...), .list)
+    if (length(objs) == 0) {
+      return(invisible(list(a=1)[0])) # Special case: return empty named list
+    }
     keys <- names(objs)
     if (is.null(keys) || any(is.na(keys)) || any(keys == "")) {
       stop("mset: all values must be named.")
@@ -278,8 +281,7 @@ fastmap <- function(missing_default = NULL) {
   # Internal function
   has_one <- function(key) {
     ensure_restore_map()
-    idx <- .Call(C_map_get, key_idx_map, key)
-    return(idx != -1L)
+    .Call(C_map_has, key_idx_map, key)
   }
 
   has <- function(keys) {
